@@ -1,0 +1,578 @@
+using UnityEngine;
+using System.Collections;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+public class CharController : MonoBehaviour {
+
+	private float actualTime;
+
+	public Slider barraVida;
+
+	public GameObject[] armas;
+	private int currentArma;
+
+
+	public AudioClip Mina;
+	public AudioClip ColetaItem;
+
+	public AudioClip KnifeSound;
+	public AudioClip ShootSound;
+	public AudioClip PassoSound;
+	private AudioSource source;
+
+
+	public GameObject Sniper;
+
+	public GameObject granada;
+	public GameObject granadaA;
+
+	public GameObject faca;
+	public GameObject arma;
+
+	public GameObject c4;
+	public GameObject c4A;
+
+	public GameObject GameOver;
+	public GameObject Victoria;
+
+	public GameObject porta;
+	public GameObject portaCasa;
+	public GameObject cam;
+	public GameObject mark;
+	public GameObject mark2;
+	public GameObject shot;
+	public GameObject gameController;
+	public GameObject municao;
+	public GameObject vida;
+	public GameObject chave;
+	public GameObject respawn;
+	public GameObject Player;
+
+
+
+	private CharacterController controller;
+
+	private int cdfaca=0;
+	private int tentativas=2;
+//	private float AngularSpeed = 100;
+	private float walkSpeed = 15;
+	private float gravity = 0.2f;
+	private float jumpSpeed = 3;
+	private float mouseSensivity = 120; 
+	private float rotationX = 0;
+
+	public bool c4C = false;
+	public bool granadaC = false;
+	public bool armaC = false;
+
+	public bool c4F = false;
+	public bool facaF = true;
+	public bool armaF = false;
+	public bool granadaF = false;
+	public bool portaGUI = false;
+	public bool portaGUI1 = false;
+
+	public bool pauseGUI = false;
+
+	public int materiais;
+
+	public int limitY = 20;
+	public int municaojogador = 10;
+	public int vidajogador = 10;
+
+	public int chavejogador = 0;
+	private Vector3 moveDirection = Vector3.zero;
+	public int chavejogadorcasa=0;
+
+	void Start () {
+		controller = GetComponent<CharacterController>();
+
+		source = GetComponent<AudioSource>();
+			
+			//trava o cursor e o deixa invisível no início do jogo
+			Cursor.lockState = CursorLockMode.Locked;
+			Cursor.visible = false;
+			
+		//facaF = true;
+
+	}
+
+	void Update () {
+
+
+		if (Sniper == null && materiais==5) {
+		
+			Victoria.active=true;
+
+		
+		}
+		barraVida.value = vidajogador;
+
+		//pause------------------------------------------------------------------
+
+		if(Input.GetKey(KeyCode.P)) {Time.timeScale=0; pauseGUI = true;}
+
+		if(Input.GetKey(KeyCode.G) ) {Time.timeScale=1	; pauseGUI = false;}
+
+		cdfaca+=1;
+
+
+		//estados de arma-------------------------------------------------------------------------------------------------
+
+
+
+		//troca de armas--------------------------------------------------------------------------------------------------
+
+		/*if (Input.GetKeyDown (KeyCode.Q)) {
+			armas [currentArma].SetActive (false);
+			currentArma--;
+			if (currentArma < 0) {
+				currentArma = armas.Length - 1;
+			}
+			armas [currentArma].SetActive (true);
+
+		}
+
+		if (Input.GetKeyDown (KeyCode.R)) {
+			armas [currentArma].SetActive (false);
+			currentArma++;
+			if (currentArma >= armas.Length) {
+				currentArma = 0;
+			}
+			armas [currentArma].SetActive (true);
+		}
+*/
+
+
+		//troca de armas -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+		if(Input.GetKey(KeyCode.Alpha1) && (armaF|| granadaF || c4F)) {
+			granadaF = false; granada.active = false; 
+			facaF = true;  faca.active = true;
+			armaF = false;arma.active = false;
+			c4F = false;  c4.active = false;}
+
+		if(Input.GetKey(KeyCode.Alpha2) && (facaF|| granadaF || c4F) && armaC ) {
+			granadaF = false; granada.active = false; 
+			armaF = true;  arma.active = true; 
+			faca.active = false;facaF = false;
+			c4F = false;  c4.active =false;}
+		
+		if(Input.GetKey(KeyCode.Alpha3) && (facaF || armaF || c4F) && granadaC ) {
+			granadaF = true;  granada.active = true; 
+			faca.active = false; facaF = false;
+			arma.active = false;armaF = false;
+			c4F = false;  c4.active = false;}
+
+
+		if(Input.GetKey(KeyCode.Alpha4) && (facaF || armaF|| granadaF) && c4C ) {
+			c4F = true;  c4.active = true; 
+			granadaF = false;  granada.active = false; 
+			faca.active = false;facaF = false; 
+			arma.active = false;armaF = false;}
+
+
+
+		//troca de armas -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+		if (facaF = true) {
+
+
+			if (cdfaca > 5) {
+				mark2.active = false;
+				//cdfaca = 0;
+			}
+
+			if (Input.GetMouseButtonDown (0) && cdfaca > 3) {
+				esfaquear ();
+
+				source.PlayOneShot(KnifeSound,1);
+
+				cdfaca = 0;
+				if (cdfaca >= 1) {
+					mark2.active = false;
+					cdfaca = 0;
+				}
+			}
+		}
+
+
+
+
+		RotateView();
+
+		//remoçao de tentativas Em queda-------------------------------------------------------------
+		
+		if (Player.transform.position.y < 24 && vidajogador<=0) {
+			Player.transform.position = respawn.transform.position;
+			tentativas -=1;
+			vidajogador=10;
+		}
+
+		//reset no jogo -----------------------------------------------------------------------------------------
+		if (Player.transform.position.y < 24  ) {
+			Player.transform.position = respawn.transform.position;
+			vidajogador -= 5;
+
+			if(vidajogador<=0)
+			{
+				Player.transform.position = respawn.transform.position;
+				tentativas -=1;
+				vidajogador=10;
+
+				Time.timeScale = 0;
+				GameOver.active=true;
+
+			}
+			
+		}
+
+
+		if (tentativas == 0) {
+
+			Application.LoadLevel (2);
+			Time.timeScale = 1;
+		}
+
+	
+		//atirar-------------------------------------------------------------------------------------------------
+
+		if (Input.GetMouseButtonDown (0) && municaojogador>0 && armaF) {
+			municaojogador -=1;
+			shoot ();
+
+		}
+
+		if (facaF) {
+
+			if (Input.GetMouseButtonDown (0) && facaF) {
+			
+				esfaquear ();
+
+			}
+		}
+
+		if (granadaF) {
+
+			if (Input.GetMouseButtonDown (0) && granadaF) {
+
+				arremessar ();
+
+			}
+		}
+
+
+			if (c4F) {
+
+				if (Input.GetMouseButtonDown (0) && c4F) {
+
+					arremessarc4 ();
+
+				}
+		}
+
+
+
+
+		//atirar-------------------------------------------------------------------------------------------------
+		if(controller.isGrounded){
+
+			moveDirection = Vector3.zero;
+
+			if(Input.GetKey(KeyCode.A)) {moveDirection.x = -walkSpeed;playStepSound();}
+			if(Input.GetKey(KeyCode.D)) {moveDirection.x = walkSpeed;playStepSound();}
+			if(Input.GetKey(KeyCode.W)) {moveDirection.z = walkSpeed;playStepSound();}
+			if(Input.GetKey(KeyCode.S)) {moveDirection.z = -walkSpeed;playStepSound();}
+
+
+
+			moveDirection = transform.TransformDirection(moveDirection);
+
+			if(Input.GetKey(KeyCode.Space)) moveDirection.y = jumpSpeed;
+
+
+		}
+
+		moveDirection.y -= gravity;
+
+		controller.Move(moveDirection * Time.deltaTime);
+	}
+
+
+	
+
+
+
+	//cria novo tiro e adiciona 1 bola ao marcador (acessa script do GameController)
+
+
+
+		//Atirar com armas-----------------------------------------------------------------------------------------------------------------------------
+
+	void shoot(){
+		Instantiate(shot, mark.transform.position, mark.transform.rotation);
+		source.PlayOneShot(ShootSound,1);
+
+	}
+
+
+	void esfaquear(){
+		
+		mark2.active=true;
+
+		}
+
+	void arremessar(){
+
+	//	mark.transform.rotation = Quaternion.Euler(20,0,0);
+
+		Instantiate(granadaA, mark.transform.position, mark.transform.rotation);
+
+	}
+
+	void arremessarc4(){
+
+		//	mark.transform.rotation = Quaternion.Euler(20,0,0);
+
+		Instantiate(c4A, mark.transform.position, mark.transform.rotation);
+
+	}
+
+
+
+
+
+
+
+	void OnTriggerEnter(Collider col) {
+
+	//coleta de itens--------------------------------------------------------------------------------------------------------------
+
+		if (col.gameObject.tag == "arma") {
+
+			c4.active = false;
+			faca.active = false;
+			armaC = true;
+			armaF = true;
+			arma.active = true;
+			source.PlayOneShot (ColetaItem);
+		}
+
+		if (col.gameObject.tag == "granada") {
+
+			arma.active = false;
+			faca.active = false;
+			c4.active = false;
+			granadaC = true;
+			granadaF = true;
+			granada.active = true;
+			source.PlayOneShot (ColetaItem);
+		}
+
+		if (col.gameObject.tag == "c4") {
+
+			granada.active = false;
+			arma.active = false;
+			faca.active = false;
+			facaF = false;
+			c4C = true;
+			c4F = true;
+			c4.active = true;
+			source.PlayOneShot (ColetaItem);
+		}
+
+
+		//coleta de itens--------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+		if (col.gameObject.tag == "material") {
+			
+			materiais += 1;
+			source.PlayOneShot (ColetaItem);
+		}
+
+
+
+		if (col.gameObject.tag == "tiroSniper") {
+
+			vidajogador -= 2;
+
+
+			if (vidajogador <= 0 && tentativas > 0) {
+
+				Time.timeScale = 0;
+				GameOver.active=true;
+				tentativas -= 1;
+				vidajogador = 10;
+				Player.transform.position = respawn.transform.position;
+				//	Application.LoadLevel(0);
+
+			}
+		}
+
+
+			if (col.gameObject.tag == "mina") {
+			
+				vidajogador -= 10;
+				source.PlayOneShot (Mina);
+
+				if (vidajogador <= 0 && tentativas > 0) {
+
+				Time.timeScale = 0;
+				GameOver.active=true;
+					tentativas -= 1;
+					vidajogador = 10;
+					Player.transform.position = respawn.transform.position;
+					//				application.loadlevel(0);
+
+				}
+
+				if (vidajogador == 0 && tentativas == 0) {
+					//Application.LoadLevel(0);
+			
+				}
+			}
+
+
+
+			//respawn-----------------------------------------------------------------
+
+			//Tiros no jogador-----------------------------------------------------------------------------------------
+
+
+			if (col.gameObject.tag == "bomba") {
+
+				vidajogador -= 5;
+
+				if (vidajogador <= 0 && tentativas > 0) {
+
+				Time.timeScale = 0;
+				GameOver.active=true;
+					tentativas -= 1;
+					vidajogador = 10;
+					Player.transform.position = respawn.transform.position;
+					//				application.loadlevel(0);
+
+				}
+
+				if (vidajogador == 0 && tentativas == 0) {
+					//Application.LoadLevel(0);
+
+				}
+			}
+
+	
+
+			if (col.gameObject.tag == "tiroSoldado") {
+
+				vidajogador -= 1;
+
+				if (vidajogador <= 0 && tentativas > 0) {
+
+				Time.timeScale = 0;
+				GameOver.active=true;
+
+					tentativas -= 1;
+					vidajogador = 10;
+					Player.transform.position = respawn.transform.position;
+					//				application.loadlevel(0);
+
+				}
+
+				if (vidajogador == 0 && tentativas == 0) {
+					//Application.LoadLevel(0);
+			;
+				}
+			}
+	
+
+
+		
+
+			//void OnTriggerEnter(Collider col) {
+		
+			//	Destroy (this.gameObject);
+		
+			//	if (col.gameObject.tag == "municao") {
+			//	Debug.Log ("bateu");
+			//	municaojogador += 10;
+			//}
+			//}
+
+			//void OnTriggerEnter(Collider vida) {
+
+
+			//	vidajogador += 10;
+
+		}
+
+
+	//triggers tentativas ------------------------------------------------------------------------------------------------
+		
+	void RotateView(){
+		//rotaciona a câmera na horizontal
+		transform.Rotate(Vector3.up * Input.GetAxis("Mouse X") * mouseSensivity * Time.deltaTime);
+
+		//rotaciona a câmera na vertical
+		rotationX += Input.GetAxis("Mouse Y") * mouseSensivity * Time.deltaTime;
+		rotationX = Mathf.Clamp(rotationX, -45, 45);
+
+		cam.transform.localEulerAngles = new Vector3(-rotationX, 
+		                                             cam.transform.localEulerAngles.y,
+		                                             cam.transform.localEulerAngles.z);   
+	
+	}
+
+
+	//interface e interaçoes de texto--------------------------------------------------------------------------------------
+	void OnGUI(){
+
+		GUI.Box (new Rect (Screen.width / 2, Screen.height / 2 , 40, 40), "");
+		GUI.Label (new Rect (Screen.width / 2, Screen.height / 2 , 40, 40), "");
+
+
+	//	GUI.Box (new Rect(10 , 5, 200, 25), "VIDA = "+vidajogador);
+		//GUI.Box (new Rect(10 , 35, 200, 25), "MUNICAO = "+municaojogador);
+		GUI.Box (new Rect(10 , 125, 200, 25), "TENTATIVAS = "+tentativas);
+		GUI.Box (new Rect(Screen.height/2 , Screen.width/2, 25, 25), "");
+		GUI.Box (new Rect(10 , 155, 200, 25), "Materiais = "+materiais);
+		GUI.Box (new Rect(Screen.height/2 , Screen.width/2, 25, 25), "");
+		//GUI.Label (new Rect(Screen.height/2 , Screen.width/2, 25, 25), "");
+
+
+
+
+		if (portaGUI1) {
+			GUI.Box (new Rect (Screen.width / 2, Screen.height / 2 - 75, 180, 40), "");
+			GUI.Label (new Rect (Screen.width / 2, Screen.height / 2 - 70, 350, 40), "Aperte E para abrir a porta!!!");
+			
+		}
+
+		if (pauseGUI) {
+			GUI.Box (new Rect (Screen.width / 2, Screen.height / 2 - 75, 180, 40), "");
+			GUI.Label (new Rect (Screen.width / 2, Screen.height / 2 - 70, 350, 40), "Aperte G para voltar ao jogo!!!");
+		}
+		   // GUI.Box (new Rect (Screen.width /2, Screen.height /2 - 75, 180, 40),"");
+			//GUI.Label (new Rect (Screen.width /2, Screen.height /2 - 70, 200, 40), "Aperte E para abrir a porta!!!");
+	
+		
+	}
+
+	void playStepSound(){
+		if (Time.time  > actualTime+ 0.5f) {
+			source.pitch = Random.Range(0.8f , 1);
+			source.PlayOneShot (PassoSound, Random.Range(0.7f,1));
+			actualTime = Time.time;
+		}
+
+
+
+
+
+
+}
+}
